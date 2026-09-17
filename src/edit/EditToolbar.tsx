@@ -15,7 +15,8 @@ const NODE_KINDS: NodeKind[] = [
 
 export function EditToolbar({
   onAddNode,
-  onSaveDraft,
+  onSave,
+  saving,
   onDownload,
   onDiscard,
   onExit,
@@ -23,7 +24,8 @@ export function EditToolbar({
   errorCount,
 }: {
   onAddNode: (kind: NodeKind) => void;
-  onSaveDraft: () => void;
+  onSave: () => void;
+  saving: boolean;
   onDownload: () => void;
   onDiscard: () => void;
   onExit: () => void;
@@ -48,8 +50,8 @@ export function EditToolbar({
       </div>
       <div className="edit-toolbar__group">
         <span className={valid ? "edit__valid" : "edit__invalid"}>{valid ? "Valide" : `${errorCount} erreur(s)`}</span>
-        <button type="button" className="app__animate-toggle" onClick={onSaveDraft} disabled={!valid}>
-          Enregistrer le brouillon
+        <button type="button" className="app__animate-toggle" onClick={onSave} disabled={!valid || saving}>
+          {saving ? "Enregistrement…" : "Enregistrer"}
         </button>
         <button type="button" className="app__animate-toggle" onClick={onDownload} disabled={!valid}>
           Télécharger le JSON

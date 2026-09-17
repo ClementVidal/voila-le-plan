@@ -15,9 +15,10 @@ import "@xyflow/react/dist/style.css";
 
 import type { GraphEdge, GraphNode, NodeKind } from "./types";
 import { useMechanismData } from "./data/useMechanismData";
-import { DRAFT_STORAGE_KEY, type MechanismData } from "./data/mechanismData";
+import { saveMechanismData, type MechanismData } from "./data/mechanismData";
 import { validateMechanismData } from "./data/validateMechanismData";
 import { generateId } from "./data/generateId";
+import { useAuth } from "./auth/useAuth";
 import { buildMechanismGraph } from "./mechanism/buildMechanismGraph";
 import { useLayoutedGraph } from "./mechanism/useLayoutedGraph";
 import { layoutMechanism, NODE_HEIGHT, NODE_WIDTH } from "./mechanism/layout";
@@ -68,8 +69,8 @@ async function seedPositionsIfNeeded(data: MechanismData): Promise<MechanismData
 
 export default function MechanismView() {
   const dataState = useMechanismData();
+  const auth = useAuth();
   const [data, setData] = useState<MechanismData | null>(null);
-  const [dataSource, setDataSource] = useState<"draft" | "published">("published");
   const [switchStates, setSwitchStates] = useState<Record<string, string>>({});
   const [selection, setSelection] = useState<Selection | null>(null);
   const [isAnimating, setIsAnimating] = useState(true);
@@ -78,13 +79,13 @@ export default function MechanismView() {
   const [editableData, setEditableData] = useState<MechanismData | null>(null);
   const [dirty, setDirty] = useState(false);
   const [editSelection, setEditSelection] = useState<EditSelection>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const downloadRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     if (dataState.status === "ready") {
       setData(dataState.data);
-      setDataSource(dataState.source);
     }
   }, [dataState]);
 
@@ -124,7 +125,7 @@ export default function MechanismView() {
   };
 
   const startEditing = async () => {
-    if (!data) return;
+    if (!data || !auth.isAuthenticated) return;
     const seeded = await seedPositionsIfNeeded(clone(data));
     setEditableData(seeded);
     setDirty(false);
@@ -133,7 +134,7 @@ export default function MechanismView() {
   };
 
   const exitEditing = () => {
-    if (dirty && !window.confirm("Quitter sans enregistrer le brouillon ? Les modifications seront perdues.")) return;
+    if (dirty && !window.confirm("Quitter sans enregistrer ? Les modifications seront perdues.")) return;
     setIsEditing(false);
     setEditableData(null);
     setEditSelection(null);
@@ -147,14 +148,20 @@ export default function MechanismView() {
     setEditSelection(null);
   };
 
-  const saveDraft = () => {
-    if (!editableData || !validation?.valid) return;
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(editableData));
-    setData(editableData);
-    setDataSource("draft");
-    setDirty(false);
-    setMessage("Brouillon enregistré dans ce navigateur.");
-    window.setTimeout(() => setMessage(null), 3000);
+  const handleSave = async () => {
+    if (!editableData || !validation?.valid || !auth.isAuthenticated) return;
+    setSaving(true);
+    try {
+      await saveMechanismData(editableData);
+      setData(editableData);
+      setDirty(false);
+      setMessage({ text: "Enregistré.", error: false });
+    } catch (cause) {
+      setMessage({ text: (cause as Error).message, error: true });
+    } finally {
+      setSaving(false);
+      window.setTimeout(() => setMessage(null), 4000);
+    }
   };
 
   const downloadJson = () => {
@@ -356,9 +363,6 @@ export default function MechanismView() {
             Boucle salaires → cotisations → Sécurité sociale, avec l'aiguillage « respect / non-respect » de la
             hausse (prototype §11 du document de passation).
           </p>
-          {!isEditing && dataSource === "draft" && (
-            <p className="app__draft-banner">Aperçu d'un brouillon local non publié.</p>
-          )}
         </div>
         <div className="app__header-actions">
           <button type="button" className="app__animate-toggle" onClick={() => setIsAnimating((v) => !v)} disabled={isEditing}>
@@ -371,19 +375,29 @@ export default function MechanismView() {
           {isEditing ? (
             <EditToolbar
               onAddNode={addNode}
-              onSaveDraft={saveDraft}
+              onSave={handleSave}
+              saving={saving}
               onDownload={downloadJson}
               onDiscard={discardChanges}
               onExit={exitEditing}
               valid={validation?.valid ?? false}
               errorCount={validation?.errors.length ?? 0}
             />
+          ) : auth.isAuthenticated ? (
+            <div className="canvas-auth-bar">
+              <button type="button" className="canvas-edit-button" onClick={startEditing}>
+                Éditer les données
+              </button>
+              <span className="canvas-auth-status">
+                Connecté : {auth.email} · <button type="button" className="link-button" onClick={() => auth.signOut()}>Se déconnecter</button>
+              </span>
+            </div>
           ) : (
-            <button type="button" className="canvas-edit-button" onClick={startEditing}>
-              Éditer les données
+            <button type="button" className="canvas-edit-button" onClick={() => auth.signInWithGoogle()} disabled={auth.loading}>
+              Se connecter avec Google pour éditer
             </button>
           )}
-          {message && <div className="edit__toast">{message}</div>}
+          {message && <div className={`edit__toast${message.error ? " edit__toast--error" : ""}`}>{message.text}</div>}
           {layoutReady ? (
             <ReactFlow
               key={isEditing ? "edit" : "view"}

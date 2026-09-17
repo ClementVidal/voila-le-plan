@@ -99,16 +99,6 @@ body {
   color: white;
 }
 
-.app__draft-banner {
-  margin: 6px 0 0;
-  font-size: 0.8rem;
-  color: var(--status-interpretation);
-}
-
-.app__draft-banner a {
-  color: inherit;
-}
-
 .app__body {
   flex: 1;
   display: flex;
@@ -158,6 +148,45 @@ body {
   color: white;
 }
 
+.canvas-edit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.canvas-auth-bar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.canvas-auth-bar .canvas-edit-button {
+  position: static;
+}
+
+.canvas-auth-status {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--panel-bg);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
 .edit-toolbar {
   position: absolute;
   top: 14px;
@@ -202,6 +231,10 @@ body {
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
+}
+
+.edit__toast--error {
+  background: var(--sign-negative);
 }
 
 .edit__valid {

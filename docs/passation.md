@@ -479,13 +479,13 @@ type GraphEdge = {
 - cliquer sur un nœud ou une arête ouvre un **inspecteur** à droite (`NodeInspector` / `EdgeInspector`) pour éditer tous ses champs (type, titre, résumé, statut, sources, branches d'un switch, signe/nature/montant/condition d'une arête) ;
 - supprimer un nœud **supprime en cascade** les arêtes qui le référencent ;
 - la validation (`src/data/validateMechanismData.ts`) tourne en direct sur les données en cours d'édition et bloque l'enregistrement/l'export tant qu'il reste des erreurs ;
-- **« Enregistrer le brouillon »** écrit dans `localStorage`, prévisualisable immédiatement en sortant du mode édition (bannière « Aperçu d'un brouillon local ») ; **« Télécharger le JSON »** exporte le fichier validé.
+- **« Enregistrer »** écrit directement en base (Supabase) ; **« Télécharger le JSON »** reste disponible comme export/sauvegarde manuelle.
 
-Comme l'app n'a pas de backend, elle n'écrit jamais directement sur GitHub : publier reste un geste manuel (télécharger → remplacer `public/data/smic-mecanisme.json` → `git push`, déploiement Vercel automatique ensuite).
+L'écriture est réservée aux utilisateurs connectés (Google SSO via Supabase Auth) : le bouton « Éditer les données » n'apparaît qu'une fois connecté, et les policies RLS refusent toute écriture par un visiteur anonyme même si quelqu'un contournait l'UI. La lecture (la carte) reste publique, sans connexion, conformément au §1 (outil grand public).
 
-### Chargement au runtime
+### Chargement au runtime et persistance
 
-L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). Le mode édition lit et valide ce même fichier. Le fichier est un objet `{ nodes: GraphNode[], edges: GraphEdge[] }` — rien d'autre (voir la décision ci-dessus sur les aiguillages).
+Les données ne sont plus compilées dans le bundle JS ni servies comme fichier statique : elles vivent dans une table Supabase (`graphs`, colonne `data jsonb`) et sont lues/écrites via l'API REST auto-générée de Supabase (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`, `src/supabaseClient.ts`). Conséquence directe : changer la ligne en base change l'affichage sans toucher au code React ni redéployer — principe §3.8 (« contenu séparé du rendu »), et vraie persistance côté serveur cette fois (plus de geste manuel télécharger → committer → pousser). Voir **[docs/supabase.md](supabase.md)** pour le schéma SQL, les policies RLS et la configuration du SSO Google. Le document reste un objet `{ nodes: GraphNode[], edges: GraphEdge[] }` — rien d'autre (voir la décision ci-dessus sur les aiguillages). `public/data/smic-mecanisme.json` est conservé dans le dépôt comme référence historique (c'est la donnée qui a servi à peupler la table Supabase initialement) mais n'est plus lu par l'app.
 
 ---
 
@@ -493,7 +493,7 @@ L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanis
 
 Le nœud **SMIC** concentre à lui seul **quatre motifs** : effet retour, aiguillage conditionnel, cascade d'indexation, verrou. C'est le premier prototype à construire, et la démo à montrer à LFI pour valider la logique.
 
-**Implémenté** dans `public/data/smic-mecanisme.json` (données, chargées au runtime — voir §10bis ci-dessous) et `src/mechanism/` + `src/components/` (rendu). Voir le README racine pour la liste des simplifications de cette première itération (verrous non modélisés).
+**Implémenté** : données persistées dans Supabase (table `graphs`, seedées depuis `public/data/smic-mecanisme.json` — voir « Chargement au runtime et persistance » ci-dessus) et `src/mechanism/` + `src/components/` (rendu). Voir le README racine pour la liste des simplifications de cette première itération (verrous non modélisés).
 
 ### Chaîne modélisée
 
@@ -547,7 +547,7 @@ Les verrous (indexation des salaires sur l'inflation, encadrement des prix alime
 | **1. Prototype mécanisme** | Vue mécanisme React Flow + ELK, propagation animée, interrupteur, panneau de détail, responsive | Démo à montrer à LFI | ✅ première itération (verrous à ajouter) |
 | **2. Validation LFI** | Présenter la démo, valider la logique des liens, **demander les tableaux de chiffrage** et un point de contact | Retours + source de chiffrage | à faire |
 | **3. Carte** | Structure parties / chapitres / sections, zoom sémantique, focus + contexte, portails, minimap maison, recherche | Carte navigable (sans toutes les mesures) | à faire |
-| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | ✅ édition visuelle dans le canevas (ajout/suppression/déplacement de nœuds, liens à la souris, inspecteur, validation en direct) ; reste à faire : recherche/zoom sémantique pour un graphe à grande échelle |
+| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | ✅ édition visuelle dans le canevas (ajout/suppression/déplacement de nœuds, liens à la souris, inspecteur, validation en direct), persistée dans Supabase, écriture réservée aux comptes Google connectés ; reste à faire : recherche/zoom sémantique pour un graphe à grande échelle, éventuelle restriction par domaine email |
 | **5. Données** | Extraction des mesures (LLM + relecture), rattachement aux sections, liens transversaux | Jeu de données édition courante | à faire |
 | **6. Calque chiffrage** | Régime de croisière, soldes par compte public, coût brut → net, mention provisoire | Calque activable | à faire |
 | **7. Parcours guidés** | « Suivre l'argent », « Ce qui change pour un salarié », etc. | Parcours animés | à faire |
