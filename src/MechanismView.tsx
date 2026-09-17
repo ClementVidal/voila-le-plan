@@ -386,6 +386,7 @@ export default function MechanismView() {
           {message && <div className="edit__toast">{message}</div>}
           {layoutReady ? (
             <ReactFlow
+              key={isEditing ? "edit" : "view"}
               nodes={flowNodes}
               edges={flowEdges}
               nodeTypes={nodeTypes}
@@ -396,7 +397,7 @@ export default function MechanismView() {
               onNodesChange={handleNodesChange}
               onEdgesChange={handleEdgesChange}
               onConnect={handleConnect}
-              fitView={!isEditing}
+              fitView
               nodesDraggable={isEditing}
               nodesConnectable={isEditing}
               deleteKeyCode={isEditing ? ["Backspace", "Delete"] : null}
