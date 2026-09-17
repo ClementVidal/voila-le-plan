@@ -470,13 +470,19 @@ type Switch = {                 // aiguillage conditionnel
 - Applique les règles de validation en direct.
 - Cible : utilisable par l'équipe programme de LFI sans développeur.
 
+**Étape intermédiaire implémentée (route `/edit`)** : un éditeur JSON brut (pas encore le formulaire visuel décrit ci-dessus) qui valide en direct contre les règles de cette section — voir `src/data/validateMechanismData.ts`. Il permet de repérer les erreurs de schéma sans redéployer, et d'enregistrer un brouillon local (`localStorage`, prévisualisable sur `/`) avant d'exporter le JSON à committer. Comme l'app n'a pas de backend, il ne publie rien directement sur GitHub — la publication reste un geste manuel (télécharger → remplacer `public/data/smic-mecanisme.json` → `git push`). Le formulaire visuel (placer des nœuds, tirer des liens à la souris) reste à construire pour que l'équipe LFI n'ait jamais à toucher du JSON.
+
+### Chargement au runtime
+
+L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). La route `/edit` lit et valide ce même fichier.
+
 ---
 
 ## 11. Prototype de référence : le mécanisme SMIC
 
 Le nœud **SMIC** concentre à lui seul **quatre motifs** : effet retour, aiguillage conditionnel, cascade d'indexation, verrou. C'est le premier prototype à construire, et la démo à montrer à LFI pour valider la logique.
 
-**Implémenté** dans `src/data/smicMecanisme.ts` (données) et `src/mechanism/` + `src/components/` (rendu). Voir le README racine pour la liste des simplifications de cette première itération (verrous non modélisés).
+**Implémenté** dans `public/data/smic-mecanisme.json` (données, chargées au runtime — voir §10bis ci-dessous) et `src/mechanism/` + `src/components/` (rendu). Voir le README racine pour la liste des simplifications de cette première itération (verrous non modélisés).
 
 ### Chaîne modélisée
 
@@ -522,7 +528,7 @@ Les verrous (indexation des salaires sur l'inflation, encadrement des prix alime
 | **1. Prototype mécanisme** | Vue mécanisme React Flow + ELK, propagation animée, interrupteur, panneau de détail, responsive | Démo à montrer à LFI | ✅ première itération (verrous à ajouter) |
 | **2. Validation LFI** | Présenter la démo, valider la logique des liens, **demander les tableaux de chiffrage** et un point de contact | Retours + source de chiffrage | à faire |
 | **3. Carte** | Structure parties / chapitres / sections, zoom sémantique, focus + contexte, portails, minimap maison, recherche | Carte navigable (sans toutes les mesures) | à faire |
-| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | à faire |
+| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | 🟡 éditeur JSON brut avec validation en direct (`/edit`) ; formulaire visuel à faire |
 | **5. Données** | Extraction des mesures (LLM + relecture), rattachement aux sections, liens transversaux | Jeu de données édition courante | à faire |
 | **6. Calque chiffrage** | Régime de croisière, soldes par compte public, coût brut → net, mention provisoire | Calque activable | à faire |
 | **7. Parcours guidés** | « Suivre l'argent », « Ce qui change pour un salarié », etc. | Parcours animés | à faire |

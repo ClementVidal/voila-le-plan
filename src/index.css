@@ -60,6 +60,12 @@ body {
   max-width: 60ch;
 }
 
+.app__header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .app__animate-toggle {
   border: 1px solid var(--accent);
   background: transparent;
@@ -69,11 +75,38 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .app__animate-toggle:hover {
   background: var(--accent);
   color: white;
+}
+
+.app__animate-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.app__animate-toggle--danger {
+  border-color: var(--sign-negative);
+  color: var(--sign-negative);
+}
+
+.app__animate-toggle--danger:hover {
+  background: var(--sign-negative);
+  color: white;
+}
+
+.app__draft-banner {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--status-interpretation);
+}
+
+.app__draft-banner a {
+  color: inherit;
 }
 
 .app__body {
@@ -95,6 +128,137 @@ body {
   height: 100%;
   color: var(--text-muted);
   font-size: 0.9rem;
+  text-align: center;
+  padding: 24px;
+}
+
+.app__loading--error {
+  color: var(--sign-negative);
+}
+
+/* --- Éditeur JSON --- */
+
+.edit__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.edit__editor {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+}
+
+.edit__textarea {
+  flex: 1;
+  width: 100%;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  resize: none;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.edit__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.edit__message {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--sign-positive);
+}
+
+.edit__report {
+  flex: 1;
+  min-width: 260px;
+  max-width: 360px;
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.edit__report h2 {
+  font-size: 1rem;
+  margin-top: 0;
+}
+
+.edit__report h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 16px 0 6px;
+}
+
+.edit__valid {
+  color: var(--sign-positive);
+  font-weight: 600;
+}
+
+.edit__invalid {
+  color: var(--sign-negative);
+  font-weight: 600;
+}
+
+.edit__error {
+  color: var(--sign-negative);
+}
+
+.edit__issues ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit__issues code {
+  font-size: 0.72rem;
+  background: var(--bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.edit__issues--warning code {
+  color: var(--status-interpretation);
+}
+
+.edit__help ol {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edit__help code {
+  font-size: 0.78rem;
+  background: var(--bg);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+@media (max-width: 720px) {
+  .edit__body {
+    flex-direction: column;
+  }
+
+  .edit__report {
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 40vh;
+  }
 }
 
 /* --- Nœuds --- */
