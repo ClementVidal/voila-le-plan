@@ -69,6 +69,51 @@
       "status": "brouillon"
     },
     {
+      "id": "var-salaire-net-smicards",
+      "kind": "variable",
+      "title": "Salaire net des smicards",
+      "summary": "Revenu net individuel des salariés payés au SMIC. Distinct de la masse salariale agrégée (vue entreprise) : ici, l'effet est regardé du côté du ménage.",
+      "position": { "x": 0, "y": 0 },
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Variable de modélisation ; la mesure porte explicitement sur un montant net, ce qui rend le lien direct."
+        }
+      ],
+      "status": "brouillon"
+    },
+    {
+      "id": "var-prime-activite",
+      "kind": "variable",
+      "title": "Prime d'activité perçue",
+      "summary": "Complément de revenu versé par l'État aux actifs modestes, dégressif avec le salaire (dispositif existant, hors programme). Une hausse du salaire net réduit mécaniquement la prime perçue.",
+      "position": { "x": 0, "y": 0 },
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Dispositif administratif existant (hors L'Avenir en commun), inclus pour distinguer le gain de pouvoir d'achat brut du gain net, conformément à l'argument « coût brut → coût net » du §6 du document de passation."
+        }
+      ],
+      "status": "brouillon"
+    },
+    {
+      "id": "var-pouvoir-achat",
+      "kind": "variable",
+      "title": "Pouvoir d'achat net des ménages au SMIC",
+      "summary": "Effet net sur le revenu disponible des ménages dont un membre est payé au SMIC : gain de salaire net, minoré par la baisse de la prime d'activité perçue.",
+      "position": { "x": 0, "y": 0 },
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Variable de synthèse ; aucun montant n'est calculé, seul le sens des deux effets qui se combinent est représenté."
+        }
+      ],
+      "status": "brouillon"
+    },
+    {
       "id": "mesure-perte-exoneration",
       "kind": "mesure",
       "title": "Perte des exonérations de cotisations",
@@ -162,6 +207,71 @@
           "document": "autre",
           "edition": "modele-interne",
           "note": "Lien non écrit explicitement dans le texte, formulé par l'équipe de modélisation (§5, motif 2)."
+        }
+      ],
+      "status": "interpretation"
+    },
+    {
+      "id": "e-switch-vers-salaire-net",
+      "kind": "conditionnel",
+      "source": "switch-respect-hausse",
+      "target": "var-salaire-net-smicards",
+      "sign": "+",
+      "nature": "comptable",
+      "condition": { "switchId": "switch-respect-hausse", "branch": "respect" },
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "La mesure fixe directement un montant net : quand l'entreprise applique la hausse, le revenu net individuel augmente d'autant (§5, motif 2 — même aiguillage que la masse salariale)."
+        }
+      ],
+      "status": "interpretation"
+    },
+    {
+      "id": "e-salaire-net-vers-pouvoir-achat",
+      "kind": "causal",
+      "source": "var-salaire-net-smicards",
+      "target": "var-pouvoir-achat",
+      "sign": "+",
+      "nature": "comptable",
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Effet direct et positif du salaire net sur le pouvoir d'achat, à isoler de l'effet compensateur de la prime d'activité (voir e-prime-activite-vers-pouvoir-achat)."
+        }
+      ],
+      "status": "interpretation"
+    },
+    {
+      "id": "e-salaire-net-vers-prime-activite",
+      "kind": "causal",
+      "source": "var-salaire-net-smicards",
+      "target": "var-prime-activite",
+      "sign": "-",
+      "nature": "comptable",
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Barème dégressif de la prime d'activité : plus le salaire net augmente, moins la prime perçue est élevée. Mécanisme administratif existant, pas une mesure du programme."
+        }
+      ],
+      "status": "interpretation"
+    },
+    {
+      "id": "e-prime-activite-vers-pouvoir-achat",
+      "kind": "causal",
+      "source": "var-prime-activite",
+      "target": "var-pouvoir-achat",
+      "sign": "+",
+      "nature": "comptable",
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "La prime d'activité fait partie du revenu disponible du ménage : sa baisse minore le gain de pouvoir d'achat apporté par la hausse du SMIC (argument « coût brut → coût net », §6)."
         }
       ],
       "status": "interpretation"

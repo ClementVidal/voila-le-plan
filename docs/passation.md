@@ -502,10 +502,16 @@ Le nœud **SMIC** concentre à lui seul **quatre motifs** : effet retour, aiguil
    │ +  (comptable)
    ▼
 [switch] L'entreprise applique la hausse du SMIC ?
-   ├─ respect      → [variable] Masse salariale → [variable] Cotisations sociales ─┐
-   └─ non_respect  → [mesure] Perte des exonérations de cotisations ───────────────┤
-                                                                                     ▼
-                                                                    [compte_public] Sécurité sociale
+   ├─ respect      → [variable] Masse salariale ────→ [variable] Cotisations sociales ─┐
+   │                                                                                     ▼
+   ├─ respect      → [variable] Salaire net des smicards                  [compte_public] Sécurité sociale
+   │                     │ +                    │ −
+   │                     ▼                       ▼
+   │        [variable] Pouvoir d'achat   [variable] Prime d'activité perçue
+   │              net des ménages  ◄──────────────┘ +
+   │              au SMIC
+   └─ non_respect  → [mesure] Perte des exonérations de cotisations ──────────────────────┘ (→ Sécurité sociale)
+
 [mesure] SMIC à 1 600 € net
    │ +  (cascade d'indexation)
    ▼
@@ -515,6 +521,8 @@ Le nœud **SMIC** concentre à lui seul **quatre motifs** : effet retour, aiguil
 [compte_public] Sécurité sociale (dépenses retraite)
 ```
 
+La branche « pouvoir d'achat » applique l'argument « coût brut → coût net » du §6 côté ménage plutôt que côté comptes publics : le gain de salaire net est direct, mais une partie en est reprise par la baisse de la prime d'activité (barème dégressif, dispositif existant hors programme). Aucun montant n'est calculé — seul le sens des deux effets qui se combinent est représenté.
+
 Les verrous (indexation des salaires sur l'inflation, encadrement des prix alimentaires) ne sont pas encore modélisés dans cette première itération — à ajouter dans un prochain passage (le style visuel « cadenas » du §5 motif 4 reste à construire).
 
 ### Montants
@@ -523,7 +531,7 @@ Les verrous (indexation des salaires sur l'inflation, encadrement des prix alime
 
 ### Critères de réussite du prototype
 
-- Lisible sur mobile, ≤ 15 nœuds dans la vue mécanisme. ✅ (7 nœuds)
+- Lisible sur mobile, ≤ 15 nœuds dans la vue mécanisme. ✅ (10 nœuds)
 - Propagation animée compréhensible sans texte. ✅ (bouton « Lancer/Arrêter la propagation », flèches actives animées)
 - L'interrupteur montre clairement la **convergence des deux branches** vers les recettes de la Sécu. ✅
 - Le nœud SMIC montre **recettes induites et dépenses induites**. ✅ (branche cotisations vs branche pensions)
