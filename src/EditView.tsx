@@ -152,7 +152,9 @@ export default function EditView() {
             <>
               <p className={result.valid ? "edit__valid" : "edit__invalid"}>
                 {result.valid
-                  ? `Valide — ${result.data?.nodes.length} nœuds, ${result.data?.edges.length} arêtes, ${result.data?.switches.length} aiguillage(s).`
+                  ? `Valide — ${result.data?.nodes.length} nœuds (dont ${
+                      result.data?.nodes.filter((n) => n.kind === "switch").length
+                    } aiguillage(s)), ${result.data?.edges.length} arêtes.`
                   : `${result.errors.length} erreur(s) bloquante(s).`}
               </p>
               {result.errors.length > 0 && (

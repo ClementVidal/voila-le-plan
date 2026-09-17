@@ -9,7 +9,17 @@ export type ValidationResult = {
   data: MechanismData | null;
 };
 
-const NODE_KINDS = ["partie", "chapitre", "section", "mesure", "variable", "compte_public", "acteur", "principe"];
+const NODE_KINDS = [
+  "partie",
+  "chapitre",
+  "section",
+  "mesure",
+  "variable",
+  "compte_public",
+  "acteur",
+  "principe",
+  "switch",
+];
 const EDGE_KINDS = ["contribution", "dependance", "causal", "flux_financier", "conditionnel", "verrou", "flux_non_monetaire"];
 const VALIDATION_STATUSES = ["brouillon", "interpretation", "valide_lfi"];
 const SOURCE_DOCUMENTS = ["programme", "chiffrage", "autre"];
@@ -30,10 +40,14 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 /**
- * Valide un JSON candidat par rapport au schéma du §10 du document de
- * passation (`src/types.ts`) et à ses règles de validation. Ne lève jamais :
- * les problèmes sont retournés, pour que `/edit` puisse tous les afficher
- * d'un coup plutôt que un par un.
+ * Valide un JSON candidat par rapport au schéma de `src/types.ts` et aux
+ * règles du §10 du document de passation. Ne lève jamais : les problèmes
+ * sont retournés, pour que `/edit` puisse tous les afficher d'un coup
+ * plutôt que un par un.
+ *
+ * Un seul objet `{ nodes, edges }` : les aiguillages sont des GraphNode de
+ * kind "switch" (portant `branches` / `defaultBranch`), pas une troisième
+ * liste à part.
  */
 export function validateMechanismData(raw: unknown): ValidationResult {
   const errors: ValidationIssue[] = [];
@@ -42,26 +56,23 @@ export function validateMechanismData(raw: unknown): ValidationResult {
   const warn = (path: string, message: string) => warnings.push({ path, message });
 
   if (!isPlainObject(raw)) {
-    err("$", "Le document doit être un objet JSON avec les clés nodes, edges, switches.");
+    err("$", "Le document doit être un objet JSON avec les clés nodes et edges.");
     return { valid: false, errors, warnings, data: null };
   }
 
   const nodesRaw = raw.nodes;
   const edgesRaw = raw.edges;
-  const switchesRaw = raw.switches;
 
   if (!Array.isArray(nodesRaw)) err("$.nodes", "doit être un tableau de GraphNode.");
   if (!Array.isArray(edgesRaw)) err("$.edges", "doit être un tableau de GraphEdge.");
-  if (!Array.isArray(switchesRaw)) err("$.switches", "doit être un tableau de Switch.");
   if (errors.length > 0) return { valid: false, errors, warnings, data: null };
 
   const nodes = nodesRaw as unknown[];
   const edges = edgesRaw as unknown[];
-  const switches = switchesRaw as unknown[];
 
   const nodeIds = new Set<string>();
-  const switchIds = new Set<string>();
   const seenIds = new Set<string>();
+  const switchBranchKeysById = new Map<string, string[]>();
 
   const checkSources = (path: string, sources: unknown) => {
     if (!Array.isArray(sources)) {
@@ -115,42 +126,28 @@ export function validateMechanismData(raw: unknown): ValidationResult {
       err(`${path}.position`, "doit être { x: number, y: number }.");
     }
     checkSources(path, node.sources);
-  });
 
-  switches.forEach((sw, i) => {
-    const path = `$.switches[${i}]`;
-    if (!isPlainObject(sw)) {
-      err(path, "doit être un objet Switch.");
-      return;
-    }
-    if (!isNonEmptyString(sw.id)) {
-      err(`${path}.id`, "doit être une chaîne non vide.");
-    } else {
-      if (seenIds.has(sw.id)) err(`${path}.id`, `identifiant dupliqué : "${sw.id}".`);
-      seenIds.add(sw.id);
-      switchIds.add(sw.id);
-    }
-    if (!isNonEmptyString(sw.label)) {
-      err(`${path}.label`, "doit être une chaîne non vide.");
-    }
-    const branches = sw.branches;
-    if (!Array.isArray(branches) || branches.length < 2) {
-      err(`${path}.branches`, "doit contenir au moins deux branches.");
-    } else {
-      const keys = new Set<string>();
-      branches.forEach((branch, j) => {
-        if (!isPlainObject(branch) || !isNonEmptyString(branch.key) || !isNonEmptyString(branch.label)) {
-          err(`${path}.branches[${j}]`, "doit être { key: string, label: string }.");
-          return;
+    if (node.kind === "switch") {
+      const branches = node.branches;
+      if (!Array.isArray(branches) || branches.length < 2) {
+        err(`${path}.branches`, "un nœud switch doit avoir au moins deux branches.");
+      } else {
+        const keys: string[] = [];
+        branches.forEach((branch, j) => {
+          if (!isPlainObject(branch) || !isNonEmptyString(branch.key) || !isNonEmptyString(branch.label)) {
+            err(`${path}.branches[${j}]`, "doit être { key: string, label: string }.");
+            return;
+          }
+          keys.push(branch.key as string);
+        });
+        if (isNonEmptyString(node.id)) switchBranchKeysById.set(node.id, keys);
+        if (isNonEmptyString(node.defaultBranch) && !keys.includes(node.defaultBranch)) {
+          err(`${path}.defaultBranch`, `référence une branche inexistante : "${node.defaultBranch}".`);
         }
-        keys.add(branch.key as string);
-      });
-      if (isNonEmptyString(sw.defaultBranch) && !keys.has(sw.defaultBranch)) {
-        err(`${path}.defaultBranch`, `référence une branche inexistante : "${sw.defaultBranch}".`);
       }
-    }
-    if (!isNonEmptyString(sw.defaultBranch)) {
-      err(`${path}.defaultBranch`, "doit être une chaîne non vide.");
+      if (!isNonEmptyString(node.defaultBranch)) {
+        err(`${path}.defaultBranch`, "un nœud switch doit avoir defaultBranch (chaîne non vide).");
+      }
     }
   });
 
@@ -202,20 +199,10 @@ export function validateMechanismData(raw: unknown): ValidationResult {
       const condition = edge.condition;
       if (!isPlainObject(condition) || !isNonEmptyString(condition.switchId) || !isNonEmptyString(condition.branch)) {
         err(`${path}.condition`, "doit être { switchId: string, branch: string }.");
-      } else if (!switchIds.has(condition.switchId)) {
-        err(`${path}.condition.switchId`, `référence un aiguillage inexistant : "${condition.switchId}" (règle §10.5).`);
-      } else {
-        const sw = switches.find((s) => isPlainObject(s) && s.id === condition.switchId) as
-          | { branches?: unknown }
-          | undefined;
-        const branchKeys = Array.isArray(sw?.branches)
-          ? (sw!.branches as unknown[])
-              .filter(isPlainObject)
-              .map((b) => b.key)
-          : [];
-        if (!branchKeys.includes(condition.branch)) {
-          err(`${path}.condition.branch`, `"${condition.branch}" n'est pas une branche de l'aiguillage "${condition.switchId}" (règle §10.5).`);
-        }
+      } else if (!switchBranchKeysById.has(condition.switchId)) {
+        err(`${path}.condition.switchId`, `référence un nœud switch inexistant : "${condition.switchId}" (règle §10.5).`);
+      } else if (!switchBranchKeysById.get(condition.switchId)!.includes(condition.branch)) {
+        err(`${path}.condition.branch`, `"${condition.branch}" n'est pas une branche du switch "${condition.switchId}" (règle §10.5).`);
       }
     }
 

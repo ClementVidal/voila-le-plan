@@ -1,9 +1,9 @@
-import type { GraphEdge, GraphNode, Switch } from "../types";
+import type { GraphEdge, GraphNode } from "../types";
 
+/** Un seul objet JSON : les aiguillages sont des GraphNode de kind "switch", pas une liste à part. */
 export type MechanismData = {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  switches: Switch[];
 };
 
 /** Chemin, relatif à la racine du site, du JSON publié qui pilote la vue mécanisme. */

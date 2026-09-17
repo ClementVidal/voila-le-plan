@@ -43,7 +43,7 @@ export default function MechanismView() {
   const data = dataState.status === "ready" ? dataState.data : null;
 
   const graph = useMemo(
-    () => (data ? buildMechanismGraph(data.nodes, data.edges, data.switches, switchStates) : null),
+    () => (data ? buildMechanismGraph(data.nodes, data.edges, switchStates) : null),
     [data, switchStates],
   );
 
@@ -57,7 +57,6 @@ export default function MechanismView() {
     const map = new Map<string, string>();
     if (!data) return map;
     for (const node of data.nodes) map.set(node.id, node.title);
-    for (const sw of data.switches) map.set(`switch::${sw.id}`, sw.label);
     return map;
   }, [data]);
 
@@ -74,25 +73,21 @@ export default function MechanismView() {
   if (!graph || !data) return null;
   const layoutReady = positions.size > 0;
 
-  const flowNodes: Node[] = graph.nodes.map((renderNode) => {
-    const position = positions.get(renderNode.id) ?? { x: 0, y: 0, width: NODE_WIDTH, height: NODE_HEIGHT };
-    const dimmed = !graph.reachable.has(renderNode.id);
+  const flowNodes: Node[] = graph.nodes.map((graphNode) => {
+    const position = positions.get(graphNode.id) ?? { x: 0, y: 0, width: NODE_WIDTH, height: NODE_HEIGHT };
+    const dimmed = !graph.reachable.has(graphNode.id);
 
-    if (renderNode.renderKind === "switch") {
-      const sw = data.switches.find((s) => s.id === renderNode.switchData.id)!;
+    if (graphNode.kind === "switch") {
       const nodeData: SwitchNodeData = {
-        switchData: sw,
-        activeBranch: switchStates[sw.id] ?? sw.defaultBranch,
+        graphNode,
+        activeBranch: switchStates[graphNode.id] ?? graphNode.defaultBranch ?? "",
         onToggle: onToggleSwitch,
       };
-      return { id: renderNode.id, type: "switch", position, data: nodeData, draggable: false };
+      return { id: graphNode.id, type: "switch", position, data: nodeData, draggable: false };
     }
 
-    const nodeData: MesureNodeData | VariableNodeData | CompteNodeData = {
-      graphNode: renderNode.graphNode,
-      dimmed,
-    };
-    return { id: renderNode.id, type: renderNode.renderKind, position, data: nodeData, draggable: false };
+    const nodeData: MesureNodeData | VariableNodeData | CompteNodeData = { graphNode, dimmed };
+    return { id: graphNode.id, type: graphNode.kind, position, data: nodeData, draggable: false };
   });
 
   const flowEdges: Edge[] = graph.edges.map((edge) => {
@@ -109,9 +104,9 @@ export default function MechanismView() {
   });
 
   const handleNodeClick = (_: unknown, node: Node) => {
-    const renderNode = graph.nodes.find((n) => n.id === node.id);
-    if (!renderNode || renderNode.renderKind === "switch") return;
-    setSelection({ type: "node", node: renderNode.graphNode });
+    const graphNode = graph.nodes.find((n) => n.id === node.id);
+    if (!graphNode) return;
+    setSelection({ type: "node", node: graphNode });
   };
 
   const handleEdgeClick = (_: unknown, edge: Edge) => {

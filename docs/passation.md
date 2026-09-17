@@ -401,17 +401,23 @@ type ValidationStatus = 'brouillon' | 'interpretation' | 'valide_lfi';
 
 type NodeKind =
   | 'partie' | 'chapitre' | 'section'
-  | 'mesure' | 'variable' | 'compte_public' | 'acteur' | 'principe';
+  | 'mesure' | 'variable' | 'compte_public' | 'acteur' | 'principe'
+  | 'switch';               // aiguillage conditionnel — voir plus bas
+
+type SwitchBranch = { key: string; label: string };
 
 type GraphNode = {
   id: Id;
   kind: NodeKind;
-  title: string;            // court : affiché sur le nœud
+  title: string;            // court : affiché sur le nœud (aussi le libellé de la question, pour un switch)
   summary?: string;         // affiché dans le panneau
   parentId?: Id;            // appartenance (section, chapitre…)
   position: { x: number; y: number };  // layout carte, persisté
   sources: SourceRef[];
   status: ValidationStatus;
+  // Uniquement pour kind === 'switch' :
+  branches?: SwitchBranch[];
+  defaultBranch?: string;
 };
 
 type Amount = {
@@ -434,18 +440,13 @@ type GraphEdge = {
   sign?: '+' | '-';
   nature: 'comptable' | 'hypothese';   // trait plein / pointillé
   amount?: Amount;
-  condition?: { switchId: Id; branch: 'respect' | 'non_respect' | string };
+  condition?: { switchId: Id; branch: 'respect' | 'non_respect' | string };  // switchId référence un GraphNode de kind 'switch'
   sources: SourceRef[];
   status: ValidationStatus;
 };
-
-type Switch = {                 // aiguillage conditionnel
-  id: Id;
-  label: string;                // ex. "L'entreprise augmente les salaires ?"
-  branches: { key: string; label: string }[];
-  defaultBranch: string;
-};
 ```
+
+**Décision (post-prototype SMIC) : pas de troisième liste `switches`.** Un aiguillage est un `GraphNode` comme un autre, avec `kind: 'switch'` et les champs `branches` / `defaultBranch` en plus. Un document JSON n'a donc que deux clés, `nodes` et `edges` — plus simple à éditer et à valider, et l'aiguillage profite gratuitement de tout ce qu'un nœud sait déjà faire (sources, statut, panneau de détail au clic).
 
 ### Règles de validation (à implémenter comme tests / linter de données)
 
@@ -474,7 +475,7 @@ type Switch = {                 // aiguillage conditionnel
 
 ### Chargement au runtime
 
-L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). La route `/edit` lit et valide ce même fichier.
+L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). La route `/edit` lit et valide ce même fichier. Le fichier est un objet `{ nodes: GraphNode[], edges: GraphEdge[] }` — rien d'autre (voir la décision ci-dessus sur les aiguillages).
 
 ---
 

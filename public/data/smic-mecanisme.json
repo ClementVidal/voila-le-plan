@@ -1,15 +1,4 @@
 {
-  "switches": [
-    {
-      "id": "switch-respect-hausse",
-      "label": "L'entreprise applique la hausse du SMIC ?",
-      "branches": [
-        { "key": "respect", "label": "Respecte la hausse" },
-        { "key": "non_respect", "label": "Ne respecte pas la hausse" }
-      ],
-      "defaultBranch": "respect"
-    }
-  ],
   "nodes": [
     {
       "id": "mesure-smic",
@@ -27,6 +16,27 @@
         }
       ],
       "status": "brouillon"
+    },
+    {
+      "id": "switch-respect-hausse",
+      "kind": "switch",
+      "title": "L'entreprise applique la hausse du SMIC ?",
+      "summary": "Aiguillage de modélisation représentant la conditionnalité des exonérations de cotisations au respect de la hausse de salaire (§5, motif 2).",
+      "position": { "x": 0, "y": 0 },
+      "sources": [
+        {
+          "document": "programme",
+          "edition": "AEC-2025",
+          "locator": "chapitre 8 (passage exact à confirmer)",
+          "note": "⚠️ Passage exact du programme à sourcer précisément — voir §13 du document de passation."
+        }
+      ],
+      "status": "interpretation",
+      "branches": [
+        { "key": "respect", "label": "Respecte la hausse" },
+        { "key": "non_respect", "label": "Ne respecte pas la hausse" }
+      ],
+      "defaultBranch": "respect"
     },
     {
       "id": "var-masse-salariale",
@@ -108,9 +118,24 @@
   ],
   "edges": [
     {
-      "id": "e-smic-vers-masse-salariale",
-      "kind": "conditionnel",
+      "id": "e-smic-vers-switch",
+      "kind": "dependance",
       "source": "mesure-smic",
+      "target": "switch-respect-hausse",
+      "nature": "comptable",
+      "sources": [
+        {
+          "document": "autre",
+          "edition": "modele-interne",
+          "note": "Entrée structurelle vers l'aiguillage de conditionnalité."
+        }
+      ],
+      "status": "interpretation"
+    },
+    {
+      "id": "e-switch-vers-masse-salariale",
+      "kind": "conditionnel",
+      "source": "switch-respect-hausse",
       "target": "var-masse-salariale",
       "sign": "+",
       "nature": "comptable",
@@ -125,9 +150,9 @@
       "status": "interpretation"
     },
     {
-      "id": "e-smic-vers-perte-exoneration",
+      "id": "e-switch-vers-perte-exoneration",
       "kind": "conditionnel",
-      "source": "mesure-smic",
+      "source": "switch-respect-hausse",
       "target": "mesure-perte-exoneration",
       "sign": "+",
       "nature": "comptable",

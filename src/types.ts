@@ -18,17 +18,23 @@ export type NodeKind =
   | "variable"
   | "compte_public"
   | "acteur"
-  | "principe";
+  | "principe"
+  | "switch"; // aiguillage conditionnel (§5, motif 2)
+
+export type SwitchBranch = { key: string; label: string };
 
 export type GraphNode = {
   id: Id;
   kind: NodeKind;
-  title: string; // court : affiché sur le nœud
+  title: string; // court : affiché sur le nœud (aussi le libellé de la question, pour un switch)
   summary?: string; // affiché dans le panneau
   parentId?: Id; // appartenance (section, chapitre…)
   position: { x: number; y: number }; // layout carte, persisté
   sources: SourceRef[];
   status: ValidationStatus;
+  // Uniquement pour kind === "switch" :
+  branches?: SwitchBranch[];
+  defaultBranch?: string;
 };
 
 export type Amount = {
@@ -56,15 +62,7 @@ export type GraphEdge = {
   sign?: "+" | "-";
   nature: "comptable" | "hypothese"; // trait plein / pointillé
   amount?: Amount;
-  condition?: { switchId: Id; branch: "respect" | "non_respect" | string };
+  condition?: { switchId: Id; branch: "respect" | "non_respect" | string }; // switchId référence un GraphNode de kind "switch"
   sources: SourceRef[];
   status: ValidationStatus;
-};
-
-export type Switch = {
-  // aiguillage conditionnel
-  id: Id;
-  label: string; // ex. "L'entreprise augmente les salaires ?"
-  branches: { key: string; label: string }[];
-  defaultBranch: string;
 };
