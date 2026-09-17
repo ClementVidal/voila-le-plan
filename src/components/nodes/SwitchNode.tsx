@@ -21,10 +21,13 @@ function SwitchNodeImpl({ data }: { data: SwitchNodeData }) {
           <button
             key={branch.key}
             type="button"
-            className={`switch__branch switch__branch--${branch.key}${
+            className={`switch__branch nodrag switch__branch--${branch.key}${
               branch.key === activeBranch ? " switch__branch--active" : ""
             }`}
-            onClick={() => onToggle(graphNode.id, branch.key)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(graphNode.id, branch.key);
+            }}
           >
             {branch.label}
           </button>

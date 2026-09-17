@@ -471,11 +471,21 @@ type GraphEdge = {
 - Applique les règles de validation en direct.
 - Cible : utilisable par l'équipe programme de LFI sans développeur.
 
-**Étape intermédiaire implémentée (route `/edit`)** : un éditeur JSON brut (pas encore le formulaire visuel décrit ci-dessus) qui valide en direct contre les règles de cette section — voir `src/data/validateMechanismData.ts`. Il permet de repérer les erreurs de schéma sans redéployer, et d'enregistrer un brouillon local (`localStorage`, prévisualisable sur `/`) avant d'exporter le JSON à committer. Comme l'app n'a pas de backend, il ne publie rien directement sur GitHub — la publication reste un geste manuel (télécharger → remplacer `public/data/smic-mecanisme.json` → `git push`). Le formulaire visuel (placer des nœuds, tirer des liens à la souris) reste à construire pour que l'équipe LFI n'ait jamais à toucher du JSON.
+**Implémenté, directement dans le canevas** (pas de route séparée) : un bouton « Éditer les données » en haut à droite du schéma bascule la vue en mode édition. Dans ce mode (`src/edit/`, orchestré par `src/MechanismView.tsx`) :
+
+- une barre d'outils flottante permet d'**ajouter un nœud** de n'importe quel `kind` existant ;
+- les nœuds sont **déplaçables** (la position est enregistrée dans `GraphNode.position` — premier usage réel de ce champ, en attendant la vue carte du §8) ;
+- **glisser depuis la poignée d'un nœud vers un autre** crée une arête (`onConnect`), aussitôt sélectionnée pour être complétée ;
+- cliquer sur un nœud ou une arête ouvre un **inspecteur** à droite (`NodeInspector` / `EdgeInspector`) pour éditer tous ses champs (type, titre, résumé, statut, sources, branches d'un switch, signe/nature/montant/condition d'une arête) ;
+- supprimer un nœud **supprime en cascade** les arêtes qui le référencent ;
+- la validation (`src/data/validateMechanismData.ts`) tourne en direct sur les données en cours d'édition et bloque l'enregistrement/l'export tant qu'il reste des erreurs ;
+- **« Enregistrer le brouillon »** écrit dans `localStorage`, prévisualisable immédiatement en sortant du mode édition (bannière « Aperçu d'un brouillon local ») ; **« Télécharger le JSON »** exporte le fichier validé.
+
+Comme l'app n'a pas de backend, elle n'écrit jamais directement sur GitHub : publier reste un geste manuel (télécharger → remplacer `public/data/smic-mecanisme.json` → `git push`, déploiement Vercel automatique ensuite).
 
 ### Chargement au runtime
 
-L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). La route `/edit` lit et valide ce même fichier. Le fichier est un objet `{ nodes: GraphNode[], edges: GraphEdge[] }` — rien d'autre (voir la décision ci-dessus sur les aiguillages).
+L'app ne compile plus les données dans le bundle JS : `public/data/smic-mecanisme.json` est servi tel quel par Vercel et chargé via `fetch()` au démarrage (`src/data/mechanismData.ts`, `src/data/useMechanismData.ts`). Conséquence directe : changer ce fichier JSON change l'affichage sans toucher au code React — première brique concrète du principe §3.8 (« contenu séparé du rendu »). Le mode édition lit et valide ce même fichier. Le fichier est un objet `{ nodes: GraphNode[], edges: GraphEdge[] }` — rien d'autre (voir la décision ci-dessus sur les aiguillages).
 
 ---
 
@@ -529,7 +539,7 @@ Les verrous (indexation des salaires sur l'inflation, encadrement des prix alime
 | **1. Prototype mécanisme** | Vue mécanisme React Flow + ELK, propagation animée, interrupteur, panneau de détail, responsive | Démo à montrer à LFI | ✅ première itération (verrous à ajouter) |
 | **2. Validation LFI** | Présenter la démo, valider la logique des liens, **demander les tableaux de chiffrage** et un point de contact | Retours + source de chiffrage | à faire |
 | **3. Carte** | Structure parties / chapitres / sections, zoom sémantique, focus + contexte, portails, minimap maison, recherche | Carte navigable (sans toutes les mesures) | à faire |
-| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | 🟡 éditeur JSON brut avec validation en direct (`/edit`) ; formulaire visuel à faire |
+| **4. Éditeur** | Édition des positions, liens, sources, montants, statuts ; validation en direct | Outil de saisie pour l'équipe | ✅ édition visuelle dans le canevas (ajout/suppression/déplacement de nœuds, liens à la souris, inspecteur, validation en direct) ; reste à faire : recherche/zoom sémantique pour un graphe à grande échelle |
 | **5. Données** | Extraction des mesures (LLM + relecture), rattachement aux sections, liens transversaux | Jeu de données édition courante | à faire |
 | **6. Calque chiffrage** | Régime de croisière, soldes par compte public, coût brut → net, mention provisoire | Calque activable | à faire |
 | **7. Parcours guidés** | « Suivre l'argent », « Ce qui change pour un salarié », etc. | Parcours animés | à faire |

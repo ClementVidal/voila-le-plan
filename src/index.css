@@ -136,69 +136,72 @@ body {
   color: var(--sign-negative);
 }
 
-/* --- Éditeur JSON --- */
+/* --- Édition dans le canevas --- */
 
-.edit__body {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-}
-
-.edit__editor {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  min-width: 0;
-}
-
-.edit__textarea {
-  flex: 1;
-  width: 100%;
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  border: 1px solid var(--border);
+.canvas-edit-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 6;
+  border: 1px solid var(--accent);
+  background: var(--panel-bg);
+  color: var(--accent);
   border-radius: 8px;
-  padding: 12px;
-  resize: none;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.canvas-edit-button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.edit-toolbar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.edit-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-toolbar select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
   background: var(--panel-bg);
   color: var(--text);
 }
 
-.edit__actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.edit__message {
-  margin: 8px 0 0;
-  font-size: 0.82rem;
-  color: var(--sign-positive);
-}
-
-.edit__report {
-  flex: 1;
-  min-width: 260px;
-  max-width: 360px;
-  border-left: 1px solid var(--border);
-  padding: 16px;
-  overflow-y: auto;
-  font-size: 0.85rem;
-}
-
-.edit__report h2 {
-  font-size: 1rem;
-  margin-top: 0;
-}
-
-.edit__report h3 {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 16px 0 6px;
+.edit__toast {
+  position: absolute;
+  top: 62px;
+  left: 14px;
+  z-index: 6;
+  background: var(--sign-positive);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
 .edit__valid {
@@ -209,10 +212,6 @@ body {
 .edit__invalid {
   color: var(--sign-negative);
   font-weight: 600;
-}
-
-.edit__error {
-  color: var(--sign-negative);
 }
 
 .edit__issues ul {
@@ -234,30 +233,154 @@ body {
   color: var(--status-interpretation);
 }
 
-.edit__help ol {
-  padding-left: 18px;
+/* --- Inspecteur (panneau d'édition d'un nœud/d'une arête) --- */
+
+.inspector {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  padding: 18px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.inspector__kind {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.inspector h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 16px 0 6px;
+}
+
+.inspector__hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.inspector__mini-button {
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.inspector__mini-button--danger {
+  border-color: var(--sign-negative);
+  color: var(--sign-negative);
+}
+
+.inspector__delete {
+  margin-top: 16px;
+  width: 100%;
+  text-align: center;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.field__label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.field__checkbox {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.field textarea {
+  min-height: 56px;
+  resize: vertical;
+}
+
+.source-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.edit__help code {
+.source-item input,
+.source-item select,
+.source-item textarea {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 7px;
   font-size: 0.78rem;
-  background: var(--bg);
-  padding: 1px 4px;
-  border-radius: 4px;
+  font-family: inherit;
+}
+
+.source-item textarea {
+  min-height: 40px;
+  resize: vertical;
+}
+
+.source-item__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.source-item__row select,
+.source-item__row input {
+  flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 720px) {
-  .edit__body {
+  .app__body {
     flex-direction: column;
   }
 
-  .edit__report {
-    max-width: none;
+  .inspector {
+    width: 100%;
+    max-height: 45vh;
     border-left: none;
     border-top: 1px solid var(--border);
-    max-height: 40vh;
+  }
+
+  .edit-toolbar {
+    font-size: 0.8rem;
   }
 }
 
@@ -319,6 +442,10 @@ body {
 .node--switch {
   background: #f1f3ff;
   border-color: #5c6ac4;
+}
+
+.node--generic {
+  border-color: var(--text-muted);
 }
 
 .switch__branches {
